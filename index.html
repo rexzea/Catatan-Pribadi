@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catatan pribadi</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #1e1e1e;
+            color: #f1f1f1;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .container {
+            width: 80%;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #2d2d2d;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.3);
+        }
+        h1 {
+            text-align: center;
+            color: #ffffff;
+        }
+        .message-form {
+            margin-bottom: 20px;
+        }
+        .message-form input, .message-form textarea {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 4px;
+            border: 1px solid #555;
+            background-color: #333;
+            color: #f1f1f1;
+        }
+        .message-form button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            background-color: #4caf50;
+            color: #fff;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(76,175,80,0.5);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .message-form button:hover {
+            background-color: #00ff0d;
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(0, 255, 76, 0.7);
+        }
+        .message-list {
+            margin-top: 20px;
+        }
+        .message-item {
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            border: 1px solid #444;
+            background-color: #2d2d2d;
+            position: relative;
+            box-shadow: 0 0 5px rgba(0,0,0,0.5);
+        }
+        .message-item .actions {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+        .message-item .actions button {
+            background: none;
+            border: none;
+            color: #fff;
+            cursor: pointer;
+            margin-left: 5px;
+        }
+        .message-item .actions button:hover {
+            color: #ff5722;
+        }
+        .filter-container {
+            margin-bottom: 20px;
+        }
+        .filter-container select, .filter-container input {
+            padding: 10px;
+            margin: 5px;
+            border-radius: 4px;
+            border: 1px solid #555;
+            background-color: #333;
+            color: #f1f1f1;
+        }
+        .theme-toggle {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .theme-toggle button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            background-color: #2196f3;
+            color: #fff;
+            box-shadow: 0 0 10px rgba(33,150,243,0.5);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .theme-toggle button:hover {
+            background-color: #959595;
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(130, 130, 130, 0.7);
+        }
+        .light-theme {
+            background-color: #fff;
+            color: #333;
+        }
+        .dark-theme {
+            background-color: #1e1e1e;
+            color: #f1f1f1;
+        }
+    </style>
+</head>
+<body class="dark-theme">
+    <div class="container">
+        <h1>Catatan Pribadi</h1>
+        <div class="message-form">
+            <input type="text" id="name" placeholder="Nama" required>
+            <textarea id="message" rows="4" placeholder="Isi catatan" required></textarea>
+            <button onclick="addMessage()">Tambahkan catatanmu</button>
+        </div>
+        <div class="filter-container">
+            <input type="text" id="nameFilter" placeholder="Filter Nama" onkeyup="filterMessages()">
+           
+        </div>
+        <div id="messageList" class="message-list"></div>
+        <div class="theme-toggle">
+            <button onclick="toggleTheme()">Ganti Tema</button>
+        </div>
+    </div>
+
+    <script>
+        const messageListElement = document.getElementById('messageList');
+        const nameFilterElement = document.getElementById('nameFilter');
+        const dateFilterElement = document.getElementById('dateFilter');
+
+        function loadMessages() {
+            const messages = JSON.parse(localStorage.getItem('messages')) || [];
+            messageListElement.innerHTML = '';
+            messages.forEach((msg, index) => {
+                addMessageToDOM(msg, index);
+            });
+        }
+
+        function saveMessages(messages) {
+            localStorage.setItem('messages', JSON.stringify(messages));
+        }
+
+        function addMessage() {
+            const name = document.getElementById('name').value;
+            const message = document.getElementById('message').value;
+            const date = new Date().toISOString().split('T')[0]; // Format YYYY-MM-DD
+            if (!name || !message) return;
+            
+            const messages = JSON.parse(localStorage.getItem('messages')) || [];
+            messages.push({ name, date, message });
+            saveMessages(messages);
+            addMessageToDOM({ name, date, message }, messages.length - 1);
+            document.getElementById('name').value = '';
+            document.getElementById('message').value = '';
+        }
+
+        function addMessageToDOM({ name, date, message }, index) {
+            const div = document.createElement('div');
+            div.className = 'message-item';
+            div.innerHTML = `
+                <strong>${name}</strong> <small>${new Date(date).toLocaleDateString()}</small>
+                <p>${message}</p>
+                <div class="actions">
+                    <button onclick="editMessage(${index})">Edit</button>
+                    <button onclick="deleteMessage(${index})">Hapus</button>
+                </div>
+            `;
+            messageListElement.appendChild(div);
+        }
+
+        function editMessage(index) {
+            const messages = JSON.parse(localStorage.getItem('messages'));
+            const message = messages[index];
+            document.getElementById('name').value = message.name;
+            document.getElementById('message').value = message.message;
+            deleteMessage(index);
+        }
+
+        function deleteMessage(index) {
+            let messages = JSON.parse(localStorage.getItem('messages'));
+            messages.splice(index, 1);
+            saveMessages(messages);
+            loadMessages();
+        }
+
+        function filterMessages() {
+            const nameFilter = nameFilterElement.value.toLowerCase();
+            const dateFilter = dateFilterElement.value;
+            const messages = JSON.parse(localStorage.getItem('messages')) || [];
+            messageListElement.innerHTML = '';
+            messages
+                .filter(msg => (nameFilter ? msg.name.toLowerCase().includes(nameFilter) : true)
+                    && (dateFilter ? msg.date === dateFilter : true))
+                .forEach((msg, index) => {
+                    addMessageToDOM(msg, index);
+                });
+        }
+
+        function toggleTheme() {
+            const body = document.body;
+            if (body.classList.contains('light-theme')) {
+                body.classList.remove('light-theme');
+                body.classList.add('dark-theme');
+            } else {
+                body.classList.remove('dark-theme');
+                body.classList.add('light-theme');
+            }
+        }
+
+        window.onload = loadMessages;
+    </script>
+</body>
+</html>
